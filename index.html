@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What's being built in your district — 2026-27 ACT Budget</title>
+<title>What is the government building near you? — 2026-27 ACT Budget</title>
 
 <!-- Pinned versions on purpose. An unpinned CDN library shipped a breaking
      change once and silently broke the live Budget Buddy site. Always pin. -->
@@ -15,6 +15,12 @@
      so this page works when double-clicked locally AND on GitHub Pages. -->
 <script src="data.js"></script>
 
+<!-- Our research into the 23 projects the Budget leaves unplaced. This does
+     NOT change data.js: it is a separate overlay, keyed by project id, and
+     every call in it carries its own confidence and its own evidence. The
+     page works without this file — the toggle simply does not appear. -->
+<script src="data/scoping/scoping.js"></script>
+
 <style>
   :root{
     --surface:#fcfcfb; --card:#fff; --line:#e6e2da;
@@ -24,57 +30,116 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--surface);color:var(--ink);overflow-x:hidden;
-    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .wrap{max-width:860px;margin:0 auto;padding:28px 20px 80px}
-  h1{font-size:26px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
-  .sub{color:var(--ink-2);margin:0 0 26px;font-size:15px}
+  h1{font-size:30px;line-height:1.2;margin:0 0 10px;letter-spacing:-.01em}
+  .sub{color:var(--ink-2);margin:0 0 18px;font-size:17px;max-width:64ch}
   h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3);
-    margin:34px 0 12px;font-weight:600}
+    margin:38px 0 12px;font-weight:600}
+  h3{font-size:16px;margin:0 0 6px}
+  p{max-width:70ch}
   .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
   button.card{text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
   button.card:focus-visible{outline:3px solid var(--accent-b);outline-offset:2px}
   button.card[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-  .lab{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3)}
+  .lab{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3)}
   .val{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-top:4px;
     font-variant-numeric:tabular-nums}
-  .note{font-size:13px;color:var(--ink-3);margin:10px 0 0}
+  .note{font-size:14px;color:var(--ink-3);margin:10px 0 0;max-width:70ch}
   /* Bars: .track and .bar MUST be display:block. They are spans in a lot of
      generated code, and inline elements ignore width and height. */
   .track{display:block;flex:1;height:16px;background:#f2efe9;border-radius:0 4px 4px 0}
   .bar{display:block;height:16px;border-radius:0 4px 4px 0;min-width:2px}
   .barrow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  .barlabel{width:132px;flex:none;font-size:13px}
-  .barval{width:74px;flex:none;text-align:right;font-size:13px;
+  .barlabel{width:150px;flex:none;font-size:14px}
+  .barval{width:108px;flex:none;text-align:right;font-size:14px;
     font-variant-numeric:tabular-nums;color:var(--ink-2)}
   .barsel .barlabel{font-weight:600}
   .barsel .track{outline:2px solid var(--ink);outline-offset:2px}
   .dot{display:inline-block;width:9px;height:9px;border-radius:50%;
     margin-right:6px;vertical-align:baseline;flex:none}
-  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-bottom:12px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--ink-2);margin-bottom:12px}
   .scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
     border-radius:10px;background:var(--card)}
-  table{width:100%;border-collapse:collapse;font-size:14px;min-width:660px}
-  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:15px;min-width:680px}
+  th,td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
   th:first-child,td:first-child{text-align:left}
   thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;
     color:var(--ink-3);background:#faf9f6}
   td{font-variant-numeric:tabular-nums}
-  tr.detail td{background:#faf9f6;text-align:left;font-size:13px;color:var(--ink-2)}
+  tr.detail td{background:#faf9f6;text-align:left;font-size:15px;color:var(--ink-2)}
+  .official{display:block;font-size:13px;color:var(--ink-3);margin-top:3px;max-width:44ch}
   button.link{background:none;border:0;padding:0;font:inherit;color:var(--accent-b);
     cursor:pointer;text-align:left;text-decoration:underline}
+  .tag{display:inline-block;font-size:12px;letter-spacing:.03em;color:var(--ink-2);
+    background:#f2efe9;border-radius:99px;padding:2px 9px;margin-left:0;white-space:nowrap}
   .flag{color:#8a3a1f;background:#fdf1ea;border-left:3px solid var(--accent-a);
-    padding:7px 10px;margin:6px 0;border-radius:0 4px 4px 0;font-size:13px}
+    padding:9px 12px;margin:8px 0;border-radius:0 4px 4px 0;font-size:14px}
   .convention{background:#fdf6ec;border:1px solid #e8d6b8;color:#6b4f27;
-    border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px}
-  .caveats{font-size:13px;color:var(--ink-2);padding-left:20px;margin:0}
-  .caveats li{margin-bottom:7px}
-  .mini{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;min-width:0}
-  .mini th,.mini td{padding:5px 8px;border-bottom:1px solid var(--line)}
-  footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);
-    font-size:13px;color:var(--ink-3)}
+    border-radius:8px;padding:12px 14px;margin:8px 0;font-size:15px}
+  .convention p{margin:0 0 8px}
+  .convention p:last-child{margin-bottom:0}
+  .caveats{font-size:15px;color:var(--ink-2);padding-left:20px;margin:0;max-width:72ch}
+  .caveats li{margin-bottom:9px}
+  /* Money changes: chips, not a wide grid of dashes. Easier to read, and it
+     wraps on a phone instead of forcing a sideways scroll. */
+  .change{border-top:1px solid var(--line);padding:10px 0}
+  .change:first-of-type{border-top:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{font-size:13px;border-radius:6px;padding:3px 9px;background:#fff;
+    border:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .chip.minus{color:#8a3a1f;background:#fdf1ea;border-color:#f0d8cc}
+  .chip.plus{color:#0b5e7f;background:#eaf4f9;border-color:#cbe3ee}
+  details.glossary{background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:2px 16px;margin:18px 0 0}
+  details.glossary summary{cursor:pointer;padding:12px 0;font-weight:600}
+  details.glossary summary:focus-visible{outline:3px solid var(--accent-b);outline-offset:2px}
+  dl.terms{margin:4px 0 14px}
+  dl.terms dt{font-weight:600;margin-top:14px}
+  dl.terms dd{margin:2px 0 0;color:var(--ink-2);max-width:70ch}
+  .kindlist{list-style:none;padding:0;margin:10px 0 0;font-size:15px;color:var(--ink-2)}
+  .kindlist li{margin-bottom:4px}
+  footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);
+    font-size:14px;color:var(--ink-3)}
   a{color:var(--accent-b)}
-  @media (max-width:520px){ .barlabel{width:96px} .barval{width:64px} }
+  /* ── District map ────────────────────────────────────────────────
+     Hand-drawn shapes. They carry relative position and rough relative
+     size, so Belconnen and Tuggeranong read as the big ones they are.
+     They are NOT survey boundaries and no figure is read off their area.
+     The button grid below is the real control; this is a pointer-only
+     second route to the same state. */
+  .mapwrap{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .mapfig{flex:1 1 300px;max-width:390px;margin:0}
+  .map{width:100%;height:auto;display:block}
+  .map .z{cursor:pointer}
+  .map .z.empty{cursor:default}
+  .map .zone{fill:var(--accent-a);stroke:#fff;stroke-width:1.5;stroke-linejoin:round}
+  .map .z:hover .zone{stroke:var(--ink);stroke-width:2}
+  .map .z.on .zone{stroke:var(--ink);stroke-width:3}
+  .map .zlab{font-size:11.5px;font-weight:600;fill:#fff;pointer-events:none}
+  .map .zval{font-size:10px;fill:#fff;pointer-events:none;font-variant-numeric:tabular-nums}
+  .map .dark{fill:var(--ink)}
+  .map .darksub{fill:var(--ink-2)}
+  .map .lake{fill:none;stroke:var(--accent-b);stroke-width:5;stroke-linecap:round;opacity:.5}
+  .map .lakelab{font-size:9px;fill:var(--accent-b);opacity:.9}
+  .offmap{flex:1 1 200px;min-width:0}
+  .offcard{background:var(--card);border:1px dashed var(--ink-3);border-radius:10px;
+    padding:12px 14px;margin-bottom:8px;cursor:pointer}
+  .offcard.on{border-style:solid;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .offhead{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);
+    margin-bottom:8px}
+  /* The scoping toggle. Off by default: data.js is the verified extraction,
+     this overlay is our own research sitting on top of it. */
+  .scopebox{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin:4px 0 14px}
+  .scopebox.on{border-color:var(--accent-b);background:#f6fbfd}
+  .scopebox p{margin-bottom:0}
+  .scopetop{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+  .scopetop input{margin:3px 0 0;width:19px;height:19px;flex:none;
+    accent-color:var(--accent-b);cursor:pointer}
+  .scopetop input:focus-visible{outline:3px solid var(--accent-b);outline-offset:2px}
+  @media (max-width:520px){ .barlabel{width:104px} .barval{width:92px;font-size:13px} }
 </style>
 </head>
 <body>
@@ -85,15 +150,35 @@ const {useState, useEffect, useMemo} = React;
 
 const DATA   = (typeof window !== "undefined" && window.DATA)   || [];
 const META   = (typeof window !== "undefined" && window.META)   || {};
+const PLAIN  = (typeof window !== "undefined" && window.PLAIN)  || {};
 const COUNTS = META.counts || {};
+// Optional. If data/scoping/scoping.js is absent the toggle never appears
+// and the page behaves exactly as it did before.
+const SCOPING = (typeof window !== "undefined" && window.SCOPING) || {};
+const HAS_SCOPING = Array.isArray(SCOPING.projects) && SCOPING.projects.length > 0;
+// How sure we are, in words. The overlay's own scale is keyed the same way.
+const SURE = {
+  budget_confirmed: "The Budget names the place",
+  strong:           "Named by government, outside the Budget",
+  partial:          "Sites known, split not published",
+  unplaceable:      "No place to find"
+};
 
-// All budget figures are $'000, so 61753 means $61.753 million.
+// All budget figures are $'000, so 61753 means $61,753,000. This page never
+// shows the $'000 form: a reader who has not seen a Budget paper reads
+// "61,753" as sixty-one thousand dollars, and is wrong by a factor of 1000.
 function money(k){
-  if (k === null || k === undefined || k === "") return "—";
-  if (typeof k === "string") return k;               // "TBD", "Ongoing"
-  const sign = k < 0 ? "-" : "", a = Math.abs(k);
-  return a >= 1000 ? sign+"$"+(a/1000).toFixed(1)+"m"
-                   : sign+"$"+a.toLocaleString("en-AU")+"k";
+  if (k === null || k === undefined || k === "") return "not published";
+  // A money column can hold "TBD" or "Ongoing" instead of a number. Say what
+  // those mean rather than printing the Budget's shorthand at a new reader.
+  if (typeof k === "string") return (PLAIN.amounts && PLAIN.amounts[k]) || k;
+  const sign = k < 0 ? "−" : "", a = Math.abs(k);
+  if (a === 0) return "$0";
+  // Past a thousand million, say billion. "$3070.8 million" is a number most
+  // people have to stop and count the digits of.
+  if (a >= 1000000) return sign + "$" + (a/1000000).toFixed(1) + " billion";
+  if (a >= 1000) return sign + "$" + (a/1000).toFixed(1) + " million";
+  return sign + "$" + (a*1000).toLocaleString("en-AU");
 }
 const isNum = v => typeof v === "number" && isFinite(v);
 const store = {
@@ -103,21 +188,163 @@ const store = {
 
 // Territory-wide and Multiple always sort last: they are not places.
 const TAIL = { "Territory-wide": 2, "Multiple": 1 };
-const districtLabel = d =>
-  d === "Territory-wide" ? "Territory-wide / can't be placed"
-  : d === "Multiple"     ? "Multiple districts"
-  : d;
+const districtLabel = d => (PLAIN.districts && PLAIN.districts[d]) || d;
+
+// ── The map ────────────────────────────────────────────────────────
+// Eight hand-drawn shapes, inline SVG, no external geometry file and no
+// build step. They hold two honest signals: where a district sits
+// relative to the others, and roughly how big it is on the ground.
+// Everything else about them is decoration. Nothing quantitative is read
+// off their area — section 3's bars do that work, on one shared scale.
+//
+// Written from knowledge of Canberra, not traced from a survey. Belconnen
+// north-west, Gungahlin north-east, the inner north and inner south either
+// side of Lake Burley Griffin, Molonglo along its river, Weston Creek and
+// Woden side by side below, Tuggeranong in the far south.
+const SHAPES = [
+  {name:"Gungahlin", lx:238, ly:52, lines:["Gungahlin"],
+   d:"M162 22 L300 16 L312 44 Q316 66 296 80 L246 96 Q210 106 190 88 L166 62 Q156 40 162 22 Z"},
+  {name:"Belconnen", lx:96, ly:112, lines:["Belconnen"],
+   d:"M34 66 Q60 50 96 54 L152 60 Q170 74 166 96 L172 130 Q168 158 146 170 L96 186 Q58 184 40 160 L26 122 Q20 88 34 66 Z"},
+  {name:"North Canberra", lx:220, ly:136, lines:["North","Canberra"],
+   d:"M178 100 L244 96 Q264 104 266 124 L268 158 Q262 178 242 184 L200 186 Q180 178 176 158 L172 126 Q170 108 178 100 Z"},
+  {name:"Molonglo", lx:102, ly:218, lines:["Molonglo"],
+   d:"M44 196 Q80 184 116 190 L156 196 Q174 206 168 226 Q162 246 142 252 L92 258 Q56 258 42 240 Q32 216 44 196 Z"},
+  {name:"South Canberra", lx:230, ly:242, lines:["South","Canberra"],
+   d:"M190 206 L248 202 Q274 208 278 232 L282 262 Q276 288 254 294 L216 296 Q194 290 188 268 L182 236 Q182 214 190 206 Z"},
+  {name:"Weston Creek", lx:76, ly:294, lines:["Weston","Creek"],
+   d:"M46 272 Q76 262 100 270 L114 288 Q120 310 108 324 L78 336 Q50 334 38 318 Q30 294 46 272 Z"},
+  {name:"Woden Valley", lx:152, ly:296, lines:["Woden","Valley"],
+   d:"M128 274 L168 268 Q188 276 190 296 L188 320 Q180 338 158 340 L134 338 Q120 328 118 308 Q116 288 128 274 Z"},
+  {name:"Tuggeranong", lx:170, ly:392, lines:["Tuggeranong"],
+   d:"M104 350 L212 344 Q242 352 250 376 L246 406 Q238 434 214 446 L170 460 Q134 458 116 436 L96 404 Q88 372 104 350 Z"}
+];
+
+// Short form for inside a shape. money() is written for prose and returns
+// "$134.3 million", which will not fit in Weston Creek.
+const mapMoney = k =>
+  k >= 1000 ? "$" + (k/1000).toFixed(k < 10000 ? 1 : 0) + "m" : "$" + k + "k";
+
+function DistrictMap({districts, active, onPick}){
+  const by  = new Map(districts.map(d => [d.name, d]));
+  const max = Math.max(...SHAPES.map(s => (by.get(s.name) || {spend:0}).spend), 1);
+
+  return (
+    <svg className="map" viewBox="0 0 360 476" role="img"
+         aria-label={"Sketch map of Canberra's eight districts, shaded by how much " +
+           "capital money each one gets in 2026-27. Position and size are " +
+           "approximate. The same choice is available as buttons below."}>
+
+      {SHAPES.map(s => {
+        const d  = by.get(s.name);
+        const sp = d ? d.spend : 0;
+        // Opacity, not hue: the palette gives one accent for this series.
+        // The power curve keeps Weston Creek visible next to Molonglo.
+        const o  = d ? 0.20 + 0.72 * Math.pow(sp / max, 0.6) : 0.06;
+        const on = active && active.name === s.name;
+        const pale = o < 0.5;                    // dark text on a light fill
+        const multi = s.lines.length > 1;
+        return (
+          <g key={s.name} className={"z" + (on ? " on" : "") + (d ? "" : " empty")}
+             onClick={d ? () => onPick(s.name) : undefined}>
+            <title>
+              {districtLabel(s.name)}
+              {d ? " — " + d.rows.length + " project" + (d.rows.length === 1 ? "" : "s") +
+                   ", " + money(d.spend) + " in 2026-27"
+                 : " — no projects in this Budget"}
+            </title>
+            <path className="zone" d={s.d} fillOpacity={o} />
+            {s.lines.map((t, i) => (
+              <text key={i} x={s.lx} textAnchor="middle"
+                    className={"zlab" + (pale ? " dark" : "")}
+                    y={multi ? s.ly + i * 12 : s.ly}>{t}</text>
+            ))}
+            {d && (
+              <text x={s.lx} textAnchor="middle"
+                    className={"zval" + (pale ? " darksub" : "")}
+                    y={s.ly + (multi ? 26 : 14)}>{mapMoney(sp)}</text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Lake Burley Griffin. Orientation only — it is the one line that
+          makes the rest of the sketch read as Canberra. */}
+      <path className="lake"
+            d="M116 200 C154 190 190 203 226 197 C250 193 264 190 276 186" />
+      <text className="lakelab" x="118" y="214">Lake Burley Griffin</text>
+    </svg>
+  );
+}
+
+// Plain name and category for a project. Falls back to the official title,
+// so a row added to data.js without a PLAIN entry still renders.
+const plainOf = r => (PLAIN.projects && PLAIN.projects[r.id]) || {short:r.project, kind:"other"};
+const kindLabel = k => (PLAIN.kinds && PLAIN.kinds[k]) || "Other";
+
+// The Budget prints TBD / DLP / Ongoing in the completion column. Say what
+// each one means, and keep the official text next to it.
+const dateHelp = c => (PLAIN.dates && PLAIN.dates[(c||"").trim()]) || null;
+
+// "Jul-28" is a Budget habit, and a new reader can read it as the 28th of July.
+// Spell it out. Anything we don't recognise is passed through untouched.
+const MONTHS = {jan:"January",feb:"February",mar:"March",apr:"April",may:"May",
+  jun:"June",jul:"July",aug:"August",sep:"September",oct:"October",
+  nov:"November",dec:"December"};
+function longDate(c){
+  const m = /^([A-Za-z]{3})-(\d{2})$/.exec((c||"").trim());
+  if (!m || !MONTHS[m[1].toLowerCase()]) return c;
+  return MONTHS[m[1].toLowerCase()] + " 20" + m[2];
+}
+
+const YEARS = [
+  ["y2025_26","2025-26"], ["y2026_27","2026-27"], ["y2027_28","2027-28"],
+  ["y2028_29","2028-29"], ["y2029_30","2029-30"]
+];
 
 function App(){
   const [sel, setSel]       = useState(() => store.get("acr.district", ""));
+  // Off by default. data.js is the verified extraction from the Budget
+  // papers; the overlay is our research on top of it. The Budget's own
+  // answer is what you see until you ask for ours.
+  const [scoped, setScoped] = useState(() => store.get("acr.scoped", "0") === "1");
+  useEffect(() => { store.set("acr.scoped", scoped ? "1" : "0"); }, [scoped]);
   const [openRow, setOpenRow] = useState(null);
   useEffect(() => { store.set("acr.district", sel); }, [sel]);
 
   // ── Group the 53 published rows by district. The grouping is ours;
   //    the figures inside it are Treasury's, one row at a time.
+  // Every project, with the district we will actually group it under. With
+  // the overlay off that is always the Budget's own answer. With it on, the
+  // eight projects we placed to a single district move there, and the six we
+  // could only narrow to a set move to Multiple. The nine we could not place
+  // at all do not move: they stay where the Budget left them.
+  const projects = useMemo(() => DATA.map(r => {
+    const sc = (scoped && SCOPING.byId) ? SCOPING.byId[r.id] : null;
+    let district = r.district;
+    if (sc) {
+      if (sc.placement === "single_district") district = sc.scoped_district;
+      else if (sc.placement === "multi_district") district = "Multiple";
+    }
+    return {...r, district, moved: district !== r.district,
+            scoping: (SCOPING.byId && SCOPING.byId[r.id]) || null};
+  }), [scoped]);
+
+  // Headline counts for the toggle's explanation. Computed from the overlay
+  // itself so the sentence can never drift from the file.
+  const scopeStats = useMemo(() => {
+    const b = {single:{n:0,$:0}, multi:{n:0,$:0}, none:{n:0,$:0}};
+    (SCOPING.projects || []).forEach(p => {
+      const k = p.placement === "single_district" ? "single"
+              : p.placement === "multi_district"  ? "multi" : "none";
+      b[k].n += 1; b[k].$ += p.spend_2026_27;
+    });
+    return b;
+  }, []);
+
   const districts = useMemo(() => {
     const m = new Map();
-    DATA.forEach(r => {
+    projects.forEach(r => {
       if (!m.has(r.district)) m.set(r.district, {name:r.district, rows:[], spend:0, value:0, valueUnknown:0});
       const g = m.get(r.district);
       g.rows.push(r);
@@ -127,7 +354,7 @@ function App(){
     });
     return [...m.values()].sort((a,b) =>
       (TAIL[a.name]||0) - (TAIL[b.name]||0) || b.spend - a.spend);
-  }, []);
+  }, [projects]);
 
   if (!DATA.length){
     return (
@@ -145,63 +372,171 @@ function App(){
     );
   }
 
+  const intro   = PLAIN.intro || {};
   const active  = districts.find(d => d.name === sel) || districts[0];
   const maxBar  = Math.max(...districts.map(d => Math.max(d.spend, d.value)));
   const noDate  = active.rows.filter(r => !r.date_published).length;
   const rows    = [...active.rows].sort((a,b) => b.spend_2026_27 - a.spend_2026_27);
 
+  // What kinds of thing is this district getting? Our grouping, same as districts.
+  const kinds = useMemo(() => {
+    const m = new Map();
+    active.rows.forEach(r => {
+      const k = plainOf(r).kind;
+      if (!m.has(k)) m.set(k, {kind:k, n:0, spend:0});
+      const g = m.get(k); g.n += 1; g.spend += r.spend_2026_27;
+    });
+    return [...m.values()].sort((a,b) => b.spend - a.spend);
+  }, [active]);
+
   return (
     <React.Fragment>
-      <h1>What's being built in your district</h1>
-      <p className="sub">
-        Every capital project in the 2026-27 ACT Budget, what it costs this year,
-        and when it's due. {COUNTS.projects} projects, {money(COUNTS.total_spend_2026_27)} for 2026-27.
-      </p>
+      <h1>{intro.headline || "What is the government building near you?"}</h1>
+      <p className="sub">{intro.standfirst}</p>
+      <div className="card" style={{background:"#fdf6ec", borderColor:"#e8d6b8", color:"#6b4f27"}}>
+        <strong>About the money on this page.</strong> {intro.moneyNote}
+      </div>
+
+      {/* ── GLOSSARY. Closed by default, so it helps without shouting. ── */}
+      <details className="glossary">
+        <summary>
+          New to budget words? Open this first
+          {PLAIN.glossary ? " — " + PLAIN.glossary.length + " terms explained" : ""}
+        </summary>
+        <dl className="terms">
+          {(PLAIN.glossary || []).map((g, i) => (
+            <React.Fragment key={i}>
+              <dt>{g.term}</dt>
+              <dd>{g.plain}</dd>
+            </React.Fragment>
+          ))}
+        </dl>
+      </details>
 
       {/* ── 1. PICK ONE ─────────────────────────────────────── */}
       <h2>1. Pick your district</h2>
+
+      {/* The map and the off-map panel are a pointer-only shortcut. The
+          button grid underneath is the real control and carries the
+          keyboard and screen-reader story, so these are not extra tab
+          stops repeating what is already below. */}
+      <div className="mapwrap">
+        <figure className="mapfig">
+          <DistrictMap districts={districts} active={active}
+                       onPick={n => { setSel(n); setOpenRow(null); }} />
+        </figure>
+        <div className="offmap" aria-hidden="true">
+          <div className="offhead">Money with nowhere to put it</div>
+          {districts.filter(d => TAIL[d.name])
+                    .sort((a, b) => b.spend - a.spend).map(d => (
+            <div key={d.name}
+                 className={"offcard" + (d.name === active.name ? " on" : "")}
+                 onClick={() => { setSel(d.name); setOpenRow(null); }}>
+              <b>{districtLabel(d.name)}</b>
+              <div className="lab" style={{marginTop:6, textTransform:"none", letterSpacing:0}}>
+                {d.rows.length} project{d.rows.length === 1 ? "" : "s"} · {money(d.spend)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {HAS_SCOPING && (
+        <div className={"scopebox" + (scoped ? " on" : "")}>
+          <label className="scopetop">
+            <input type="checkbox" checked={scoped}
+                   onChange={e => { setScoped(e.target.checked); setOpenRow(null); }} />
+            <span>
+              <b>Show the places we found ourselves</b>
+              <span className="lab" style={{display:"block", marginTop:4,
+                    textTransform:"none", letterSpacing:0}}>
+                {scoped ? "On — showing our research" : "Off — showing only what the Budget says"}
+              </span>
+            </span>
+          </label>
+          <p style={{margin:"10px 0 0", fontSize:15}}>
+            The Budget gives no location for {SCOPING.projects.length} projects
+            worth {money(COUNTS.unlocatable_spend)}. We went looking. We placed{" "}
+            <b>{scopeStats.single.n} of them, {money(scopeStats.single.$)}</b>, in one
+            district. Another {scopeStats.multi.n} ({money(scopeStats.multi.$)}) are
+            spread over several. {scopeStats.none.n} ({money(scopeStats.none.$)}) genuinely
+            have no place to find — a provision, a program across every government
+            building, or a pipeline whose sites are not chosen yet.
+          </p>
+          <p style={{margin:"8px 0 0", fontSize:15}}>
+            This is our work, not the Budget's. Every project below shows how sure
+            we are. Turning this off returns the page to the Budget's own answer.
+          </p>
+        </div>
+      )}
+
+      <p className="note" style={{marginBottom:18}}>
+        The shapes show roughly where each district sits and how big it is.
+        They are drawn by hand, not surveyed, and nothing is measured off
+        them. Shading is this year's spending. The projects on the right have
+        no single place to sit — together they are{" "}
+        {money(districts.filter(d => TAIL[d.name]).reduce((a, d) => a + d.spend, 0))} of
+        the {money(COUNTS.total_spend_2026_27)} in this Budget, so leaving
+        them off the map would hide the largest group of all.
+      </p>
+
       <div className="grid">
         {districts.map(d => (
           <button key={d.name} className="card" aria-pressed={d.name === active.name}
                   onClick={() => { setSel(d.name); setOpenRow(null); }}>
             <b>{districtLabel(d.name)}</b>
-            <div className="lab" style={{marginTop:6}}>
-              {d.rows.length} project{d.rows.length === 1 ? "" : "s"} · {money(d.spend)}
+            <div className="lab" style={{marginTop:6, textTransform:"none", letterSpacing:0}}>
+              {d.rows.length} project{d.rows.length === 1 ? "" : "s"} · {money(d.spend)} this year
             </div>
           </button>
         ))}
       </div>
 
       {/* ── 2. THREE STAT TILES ─────────────────────────────── */}
-      <h2>2. {districtLabel(active.name)} in 2026-27</h2>
+      <h2>2. {districtLabel(active.name)}, in 2026-27</h2>
       <div className="grid">
         <div className="card">
           <div className="lab">Projects</div>
           <div className="val">{active.rows.length}</div>
         </div>
         <div className="card">
-          <div className="lab">Spend in 2026-27</div>
+          <div className="lab">To be spent this year</div>
           <div className="val">{money(active.spend)}</div>
         </div>
         <div className="card">
-          <div className="lab">No completion date</div>
+          <div className="lab">With no finish date</div>
           <div className="val">{noDate}</div>
         </div>
       </div>
+
+      <h3 style={{marginTop:22}}>What kind of things?</h3>
+      <ul className="kindlist">
+        {kinds.map(k => (
+          <li key={k.kind}>
+            <strong>{kindLabel(k.kind)}</strong> — {k.n} project{k.n === 1 ? "" : "s"},
+            {" "}{money(k.spend)} this year
+          </li>
+        ))}
+      </ul>
       <p className="note">
-        District grouping is ours, not Treasury's. The Budget does not publish
-        spending by district.
+        We sorted the projects into districts and into these categories by reading
+        each project's title. The Budget does not publish either grouping, so both
+        are our call, not Treasury's. Every project below shows the district we gave it.
       </p>
 
       {/* ── 3. COMPARISON ───────────────────────────────────── */}
       <h2>3. Every district compared</h2>
+      <p style={{marginTop:0}}>
+        Each district gets two bars. The red bar is the money to be spent in
+        2026-27. The blue bar is what those same projects will cost in total,
+        counting every year until they are finished.
+      </p>
       <div className="legend">
-        <span><span className="dot" style={{background:"var(--accent-a)"}}></span>Spend in 2026-27</span>
-        <span><span className="dot" style={{background:"var(--accent-b)"}}></span>Total project value, all years</span>
+        <span><span className="dot" style={{background:"var(--accent-a)"}}></span>To be spent in 2026-27</span>
+        <span><span className="dot" style={{background:"var(--accent-b)"}}></span>Total cost, all years</span>
       </div>
       {districts.map(d => (
         <div key={d.name} className={d.name === active.name ? "barsel" : ""}
-             style={{marginBottom:14}}>
+             style={{marginBottom:16}}>
           <div className="barrow">
             <span className="barlabel">
               <span className="dot" style={{background:"var(--accent-a)"}}></span>
@@ -214,9 +549,9 @@ function App(){
             <span className="barval">{money(d.spend)}</span>
           </div>
           <div className="barrow">
-            <span className="barlabel" style={{color:"var(--ink-3)",fontSize:12}}>
+            <span className="barlabel" style={{color:"var(--ink-3)",fontSize:13}}>
               <span className="dot" style={{background:"var(--accent-b)"}}></span>
-              total value
+              total cost
             </span>
             <span className="track">
               <span className="bar" style={{width:(d.value/maxBar*100)+"%",
@@ -227,132 +562,159 @@ function App(){
         </div>
       ))}
       <p className="note">
-        Both bars share one scale, so you can see how much of a multi-year
-        commitment lands in 2026-27. Projects whose total value is published as
-        "TBD" or "Ongoing" are excluded from the blue bar only
-        ({DATA.filter(r => !isNum(r.total_project_value)).length} of {DATA.length} projects).
+        Both bars use the same scale, so you can see how much of a many-year
+        project lands in this one year. The blue bar leaves out projects whose
+        total cost is published as "TBD" or "Ongoing", because there is no number
+        to add ({DATA.filter(r => !isNum(r.total_project_value)).length} of the {DATA.length} projects).
       </p>
 
       {/* ── 4. FULL TABLE ───────────────────────────────────── */}
       <h2>4. Every project in {districtLabel(active.name)}</h2>
+      <p style={{marginTop:0}}>
+        Biggest spend this year first. The small grey line under each name is the
+        official title and the table it came from, so you can look it up.
+      </p>
       <div className="scroller">
         <table>
           <thead>
             <tr>
-              <th>Project</th><th>2026-27</th><th>Total value</th>
-              <th>Due</th><th>District</th><th>Source</th>
+              <th>Project</th>
+              <th>Spent this year</th>
+              <th>Total cost</th>
+              <th>Due to finish</th>
+              <th>District</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(r => (
+            {rows.map(r => {
+              const p = plainOf(r);
+              const help = dateHelp(r.completion);
+              return (
               <React.Fragment key={r.id}>
                 <tr>
                   <td>
                     <span className="dot" style={{background:"var(--accent-a)"}}></span>
-                    {r.appropriation.length > 0 ? (
-                      <button className="link"
+                    <strong>{p.short}</strong>{" "}
+                    <span className="tag">{kindLabel(p.kind)}</span>
+                    <span className="official">{r.project} · {r.source}</span>
+                    {r.appropriation.length > 0 &&
+                      <button className="link" style={{marginTop:6}}
                               aria-expanded={openRow === r.id}
                               onClick={() => setOpenRow(openRow === r.id ? null : r.id)}>
-                        {r.project}
-                      </button>
-                    ) : r.project}
-                    {r.appropriation.length > 0 &&
-                      <span className="lab" style={{marginLeft:6}}>
-                        {r.appropriation.length} change{r.appropriation.length === 1 ? "" : "s"}
-                      </span>}
+                        {openRow === r.id ? "Hide" : "Show"} {r.appropriation.length} change
+                        {r.appropriation.length === 1 ? "" : "s"} to this project's money
+                      </button>}
                   </td>
                   <td>{money(r.spend_2026_27)}</td>
                   <td>{money(r.total_project_value)}</td>
-                  <td>{r.completion}</td>
-                  <td>{districtLabel(r.district)}</td>
-                  <td>{r.source}</td>
+                  <td>
+                    {help ? help : longDate(r.completion)}
+                    <span className="official">Budget prints: {r.completion || "nothing"}</span>
+                  </td>
+                  <td>
+                    {districtLabel(r.district)}
+                    {r.moved && (
+                      <span className="official">
+                        Our research, not the Budget. The Budget gives no
+                        location for this one.
+                        {r.scoping && SURE[r.scoping.confidence]
+                          ? " " + SURE[r.scoping.confidence] + "."
+                          : ""}
+                        {r.scoping && r.scoping.sites && r.scoping.sites.length
+                          ? " Site: " + r.scoping.sites.map(s =>
+                              typeof s === "string" ? s : (s.name || s.site || "")
+                            ).filter(Boolean).join("; ") + "."
+                          : ""}
+                      </span>
+                    )}
+                  </td>
                 </tr>
 
                 {openRow === r.id && (
                   <tr className="detail">
-                    <td colSpan={6}>
+                    <td colSpan={5}>
+                      <h3>{(PLAIN.changes && PLAIN.changes.heading) || "Has the money for this project changed?"}</h3>
                       <div className="convention">
-                        <strong>Read this before the numbers below.</strong>{" "}
-                        {META.sign_convention}
+                        <p><strong>Read this before the numbers below.</strong>{" "}
+                          {PLAIN.changes && PLAIN.changes.plain}</p>
+                        <p><strong>{PLAIN.changes && PLAIN.changes.warning}</strong></p>
                       </div>
-                      <p style={{margin:"8px 0 0"}}>
-                        Every change-to-appropriation row for this initiative.
-                        These are adjustments against the previous Budget.{" "}
-                        <strong>They are not extra money and must not be added to
-                        the {money(r.spend_2026_27)} above.</strong>
-                      </p>
-                      <table className="mini">
-                        <thead>
-                          <tr>
-                            <th>Item</th><th>2025-26</th><th>2026-27</th>
-                            <th>2027-28</th><th>2028-29</th><th>2029-30</th><th>Type</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {r.appropriation.map((a, i) => (
-                            <tr key={i}>
-                              <td>{a.item}<br/>
-                                <span className="lab">
-                                  {a.statement}, Table {a.table}
-                                  {a.section ? " · " + a.section : ""}
-                                </span>
-                              </td>
-                              <td>{money(a.y2025_26)}</td>
-                              <td>{money(a.y2026_27)}</td>
-                              <td>{money(a.y2027_28)}</td>
-                              <td>{money(a.y2028_29)}</td>
-                              <td>{money(a.y2029_30)}</td>
-                              <td>{a.is_reprofile ? "Timing change" : "Other"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+
+                      {r.appropriation.map((a, i) => {
+                        const moved = YEARS.filter(([k]) => isNum(a[k]) && a[k] !== 0);
+                        return (
+                          <div className="change" key={i}>
+                            <div>
+                              <strong>{a.is_reprofile ? "Labelled a timing change" : "Another kind of change"}</strong>
+                              {" — "}{a.item}
+                            </div>
+                            <span className="official">
+                              {a.statement}, Table {a.table}{a.section ? " · " + a.section : ""}
+                            </span>
+                            <div className="chips">
+                              {moved.length === 0
+                                ? <span className="chip">No money moved in these five years</span>
+                                : moved.map(([k, label]) => (
+                                    // The words carry the direction, so the chip
+                                    // shows the size without a second minus sign.
+                                    <span key={k} className={"chip " + (a[k] < 0 ? "minus" : "plus")}>
+                                      {money(Math.abs(a[k]))} {a[k] < 0 ? "taken out of" : "added to"} {label}
+                                    </span>
+                                  ))}
+                            </div>
+                            {a.flag && (
+                              <div className="flag">
+                                <strong>Worth a closer look.</strong>{" "}
+                                {(PLAIN.flags && PLAIN.flags[a.flag]) || a.flag}
+                                {PLAIN.flags && PLAIN.flags[a.flag] &&
+                                  <span className="official">Note as recorded: {a.flag}</span>}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
                       {isNum(r.appropriation_net_2026_27) && (
-                        <p style={{margin:"8px 0 0"}}>
-                          Net across all rows for 2026-27:{" "}
+                        <p style={{margin:"12px 0 0"}}>
+                          All of those changes added together, for 2026-27 only:{" "}
                           <strong>{money(r.appropriation_net_2026_27)}</strong>
                         </p>
                       )}
-                      {r.appropriation.filter(a => a.flag).map((a, i) => (
-                        <div className="flag" key={i}>
-                          <strong>Flag on "{a.item}":</strong> {a.flag}
-                        </div>
-                      ))}
                     </td>
                   </tr>
                 )}
               </React.Fragment>
-            ))}
+            );})}
           </tbody>
         </table>
       </div>
 
       {/* ── 5. CAVEATS. These stay on screen. ───────────────── */}
-      <h2>What this does and doesn't show</h2>
+      <h2>What this page can't tell you</h2>
+      <p style={{marginTop:0}}>
+        Every number here is copied from the Budget papers. That does not make
+        the page complete. Here is what to watch for.
+      </p>
       <ul className="caveats">
-        {(META.caveats || []).map((c, i) => <li key={i}>{c}</li>)}
-        <li>
-          These {COUNTS.projects} projects total $924,594k. The Budget's printed
-          Total Capital Program is $929,850k. The $5,256k difference is the Asset
-          Renewal Program and subtotal lines, which are excluded here to avoid
-          double counting.
-        </li>
+        {(PLAIN.caveats || META.caveats || []).map((c, i) => <li key={i}>{c}</li>)}
       </ul>
 
       {/* ── 6. CITATION. Do not delete this. ────────────────── */}
       <footer>
         <p>
-          Every figure comes from <strong>{META.primary_source}</strong>, with
+          Every figure comes from <strong>{META.primary_source}</strong>, with the
           change history from <strong>{META.appropriation_source}</strong>,
-          2026-27 ACT Budget. See the{" "}
-          <a href={META.budget_url}>official Budget papers</a>. Values are {META.unit}.
+          2026-27 ACT Budget. You can read the{" "}
+          <a href={META.budget_url}>official Budget papers</a> yourself. The papers
+          print their figures in {META.unit}; this page shows full dollars instead.
         </p>
         <p>
-          This is an illustrative guide, not financial advice or an eligibility
-          determination. Check <a href="https://www.act.gov.au">act.gov.au</a> and
-          the official papers before quoting a figure.
+          This is a guide for reading the Budget. It is not financial advice, and it
+          does not decide what anyone is entitled to. Check{" "}
+          <a href="https://www.act.gov.au">act.gov.au</a> and the official papers
+          before you quote a figure.
         </p>
-        <p>Your selection is saved in this browser only. Nothing is sent anywhere.</p>
+        <p>The district you pick is saved in this browser only. Nothing is sent anywhere.</p>
       </footer>
     </React.Fragment>
   );

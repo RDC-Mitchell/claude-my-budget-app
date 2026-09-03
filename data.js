@@ -3878,3 +3878,184 @@ window.LAYERS = {
  }
 ]
 };
+
+// ─────────────────────────────────────────────────────────────
+// window.PLAIN — the plain-English layer (added on this branch).
+//
+// Nothing above this line has changed. Every figure in window.DATA
+// and window.META is exactly as verified against the Budget papers.
+// This block only adds WORDS: short names, plain definitions, and
+// caveats rewritten for a reader who has never opened a Budget paper.
+//
+// Rule for editing this block: you may make a sentence simpler.
+// You may not make a claim the source doesn't support. If the plain
+// wording and the official wording disagree, the official wording wins
+// and the plain wording is the bug.
+// ─────────────────────────────────────────────────────────────
+
+window.PLAIN = {
+
+ // Shown at the top of the page, before any numbers.
+ "intro": {
+  "headline": "What is the government building near you?",
+  "standfirst": "Once a year the ACT Government publishes a budget: its plan for raising and spending money. Part of that plan pays for things you can walk up to and touch — schools, roads, hospitals, pools. This page shows all 53 of those building projects for 2026-27, where they are, what they cost, and when they are due.",
+  "moneyNote": "The Budget prints its money in thousands of dollars, so a school costs \"61,753\". That means $61,753,000. We have done that conversion for you on every number on this page."
+ },
+
+ // Every word on this page that a Budget paper uses and a normal
+ // person doesn't. Definitions are plain, not simplified into being wrong.
+ "glossary": [
+  {"term": "Budget",
+   "plain": "The government's plan for one year: where its money comes from and where it goes. It is published in a set of documents called the Budget papers and argued over in the Legislative Assembly."},
+  {"term": "Capital program",
+   "plain": "The part of the budget that builds things — buildings, roads, pipes, playing fields. It is separate from the money that runs services day to day, like paying teachers and nurses."},
+  {"term": "Financial year, and why it's written 2026-27",
+   "plain": "Government years don't start in January. They run 1 July to 30 June. \"2026-27\" means 1 July 2026 to 30 June 2027."},
+  {"term": "Spend in 2026-27",
+   "plain": "How much of a project's cost the government plans to spend in this one year. Most big projects run for several years, so this is a slice, not the whole thing."},
+  {"term": "Total project value",
+   "plain": "What the whole project is expected to cost from start to finish, adding up every year. For a project that takes five years, this is much bigger than the 2026-27 figure."},
+  {"term": "District",
+   "plain": "Canberra is made up of districts — Belconnen, Gungahlin, Tuggeranong, Woden Valley and the rest. Important: the Budget does not sort its spending by district. We did that ourselves, by reading the place name in each project's title."},
+  {"term": "Appropriation",
+   "plain": "The formal permission to spend public money. \"Changes to appropriation\" means the government has adjusted a spending plan it announced earlier."},
+  {"term": "Reprofiling, or a timing change",
+   "plain": "Moving money from one year to another. The project is still going ahead; it is just happening later than first planned. This is different from a cut, where the money is taken away."},
+  {"term": "TBD",
+   "plain": "Short for \"to be decided\". The Budget has not published a finish date for this project."},
+  {"term": "DLP",
+   "plain": "Short for \"defects liability period\". The thing is built and being used, but the builder is still responsible for fixing faults. The Budget prints DLP instead of a finish date."},
+  {"term": "Ongoing",
+   "plain": "Work that repeats every year — like keeping the public pools running — so there is no finish date to print."},
+  {"term": "Statement G, Table 9",
+   "plain": "The Budget papers are split into statements, each holding numbered tables. Every figure on this page names the exact table it came from, so you can look it up yourself and check us."}
+ ],
+
+ // What kind of thing each project is. Our grouping, like the districts —
+ // read off the project title, not published by Treasury.
+ "kinds": {
+  "schools":   "Schools and education",
+  "health":    "Hospitals and health",
+  "transport": "Roads and transport",
+  "sport":     "Sport and pools",
+  "arts":      "Arts and culture",
+  "emergency": "Police, fire and ambulance",
+  "housing":   "Housing",
+  "waste":     "Rubbish and recycling",
+  "climate":   "Climate and energy",
+  "buildings": "Public buildings",
+  "other":     "Other"
+ },
+
+ // Plain readings of what the Budget prints in the completion-date column.
+ // The official text is always shown next to these.
+ "dates": {
+  "TBD":     "No finish date decided yet",
+  "DLP":     "Built and in use, builder still fixing faults",
+  "Ongoing": "Runs every year, no finish date",
+  "":        "No date published"
+ },
+
+ // Plain readings of the three warning notes recorded during data checking.
+ // The original note is still shown under each one, word for word.
+ "flags": {
+  "labelled as a funding-profile / reprofiling change but the net five-year effect is negative - this may be a genuine reduction or a transfer out, NOT a timing change":
+   "The Budget files this under moving money between years. But add the five years up and there is less money than before, not the same money later. That could be a real cut, or money moved to a different project. Read the source table before you call it either one.",
+  "movement does not start in 2025-26; earliest affected year is budget_2026_27":
+   "This change does not touch 2025-26. The first year it changes is 2026-27.",
+  "movement does not start in 2025-26; earliest affected year is estimate_2027_28":
+   "This change does not touch 2025-26 or 2026-27. The first year it changes is 2027-28."
+ },
+
+ // What the Budget prints in a money column when there is no number.
+ "amounts": {
+  "TBD":     "Not decided yet",
+  "Ongoing": "No total — runs every year"
+ },
+
+ "districts": {
+  "Territory-wide": "Across the whole ACT, or we couldn't tell where",
+  "Multiple":       "Spread across more than one district"
+ },
+
+ // Plain version of META.sign_convention. Same meaning, shorter words.
+ "changes": {
+  "heading": "Has the money for this project changed?",
+  "plain": "Governments change spending plans they have already announced. A minus number means money was taken out of that year. A plus number means money was added. A minus in one year paired with a plus in a later year usually means the project was delayed, not cut.",
+  "warning": "Do not add these numbers to the project's spend above. They are corrections to an older plan, not extra money. They describe the same dollars twice."
+ },
+
+ // Plain rewrites of META.caveats. Same facts, same numbers, shorter words.
+ // Nothing here softens anything: if the data has a problem, it says so.
+ "caveats": [
+  "We grouped these projects by district. The Budget doesn't. We read the place name in each project's title and sorted from there, so a different list of keywords would give different totals. Every project shows the district we gave it, so you can check the call.",
+  "23 of the 53 projects, worth $400.1 million, don't name a place we could match. They are grouped as \"Across the whole ACT\". We have not hidden them.",
+  "23 of the 53 projects have no usable finish date. The Budget prints TBD, DLP, Ongoing, or nothing at all.",
+  "The list of money changes under a project shows every adjustment for it, not only the delays. Some sit under headings like savings, offsets or transfers.",
+  "Never add a money-change figure to a project's 2026-27 spend. They are corrections to an earlier plan, not extra money.",
+  "A few rows are labelled a timing change but add up to less money overall. We flag those where they appear. Don't call one a cut without reading the original table.",
+  "Kenny High School's printed finish date is Jan-24 — a date that has already passed. We show it exactly as published rather than guess at the real one.",
+  "Telopea Park High School shows $0 for 2026-27 in the main table, while the change tables show +$6.15 million under one name and -$24.05 million under another. We show it as published and leave the puzzle visible.",
+  "The data file also holds school and housing lists that this page doesn't show. Their numbers overlap each other and must never be added together.",
+  "Add up every project on this page and you get $924.6 million. The Budget's printed total for the capital program is $929.9 million, which is $5.3 million more. The difference is lines in the Budget table that we left out because they repeat money counted elsewhere. We can't account for that $5.3 million to the dollar, so if you need the official total, quote the Budget's figure and not ours."
+ ],
+
+ // Plain short names and a category for each project, keyed by DATA id.
+ // The full official title is still shown next to every short name —
+ // the short name is a signpost, never a replacement for the record.
+ "projects": {
+  "canberra-theatre-redevelopment-delivering-a-new-lyric-theatr": {"short": "Delivering a new Lyric Theatre", "kind": "arts"},
+  "improving-canberra-s-health-infrastructure-northside-hospita": {"short": "Northside Hospital Development", "kind": "health"},
+  "connected-and-sustainable-canberra-monaro-highway-upgrades": {"short": "Monaro Highway upgrades", "kind": "transport"},
+  "new-and-expanded-schools-development-of-the-whitlam-primary-": {"short": "Whitlam Primary School and early childhood centre", "kind": "schools"},
+  "molonglo-enabling-works": {"short": "Molonglo Enabling Works", "kind": "other"},
+  "market-conditions-provision": {"short": "Market Conditions Provision", "kind": "other"},
+  "delivering-a-second-public-college-for-gungahlin": {"short": "Delivering a second public college for Gungahlin", "kind": "schools"},
+  "connected-and-sustainable-canberra-constructing-the-william-": {"short": "Constructing the William Hovell Drive duplication", "kind": "transport"},
+  "delivering-light-rail-to-woden": {"short": "Delivering Light Rail to Woden", "kind": "transport"},
+  "new-and-expanded-schools-garran-primary-school": {"short": "Garran Primary School", "kind": "schools"},
+  "kingston-arts-precinct": {"short": "Kingston Arts Precinct", "kind": "arts"},
+  "new-and-expanded-schools-strathnairn-primary-school": {"short": "Strathnairn Primary School", "kind": "schools"},
+  "athllon-drive-duplication": {"short": "Athllon Drive Duplication", "kind": "transport"},
+  "better-transport-infrastructure-new-light-rail-vehicles-and-": {"short": "New light rail vehicles and depot expansion", "kind": "transport"},
+  "canberra-institute-of-technology-woden-campus-project-and-pu": {"short": "CIT Woden campus and bus interchange", "kind": "transport"},
+  "delivery-of-the-whitlam-school-stage": {"short": "Whitlam School, next stage", "kind": "schools"},
+  "new-and-expanded-schools-narrabundah-college": {"short": "Narrabundah College", "kind": "schools"},
+  "delivering-the-new-materials-recovery-facility-and-food-orga": {"short": "New recycling and food-waste facility", "kind": "waste"},
+  "climate-action-continuing-the-electrification-of-government-": {"short": "Switching government buildings to electricity", "kind": "climate"},
+  "better-community-infrastructure-public-building-upgrades": {"short": "Public Building Upgrades", "kind": "buildings"},
+  "better-community-infrastructure-gungahlin-community-centre-d": {"short": "Gungahlin Community Centre", "kind": "buildings"},
+  "new-materials-recovery-facility": {"short": "New Materials Recovery Facility", "kind": "waste"},
+  "better-transport-infrastructure-delivering-light-rail-stage-": {"short": "Delivering Light Rail Stage 2A", "kind": "transport"},
+  "new-and-expanded-schools-majura-primary-school-modernisation": {"short": "Majura Primary School modernisation", "kind": "schools"},
+  "improving-canberra-s-health-infrastructure-redeveloping-and-": {"short": "Watson Health Precinct", "kind": "health"},
+  "canberra-aquatic-centre": {"short": "Canberra Aquatic Centre", "kind": "sport"},
+  "supporting-local-sport-stromlo-district-playing-fields-stage": {"short": "Stromlo District Playing Fields, stage 1", "kind": "sport"},
+  "improving-canberra-s-health-infrastructure-inner-south-healt": {"short": "Inner South Health Centre Construction", "kind": "health"},
+  "infrastructure-canberra-2026-27-asset-renewal-program": {"short": "Asset Renewal Program (repairs to things already built)", "kind": "other"},
+  "improving-canberra-s-health-infrastructure-more-parking-at-t": {"short": "More parking at the Canberra Hospital", "kind": "health"},
+  "improving-canberra-s-health-infrastructure-next-steps-for-th": {"short": "Canberra Hospital, planning the next stage", "kind": "health"},
+  "improving-canberra-s-health-infrastructure-canberra-hospital": {"short": "Canberra Hospital Expansion", "kind": "health"},
+  "more-energy-efficient-government-accommodation": {"short": "Making government offices more energy efficient", "kind": "climate"},
+  "designing-the-molonglo-parkway-drive-connector": {"short": "Designing the Molonglo Parkway-Drive Connector", "kind": "transport"},
+  "investing-in-public-services-relocation-of-access-canberra-w": {"short": "Relocation of Access Canberra Woden", "kind": "other"},
+  "managing-government-and-community-facilities": {"short": "Looking after government and community buildings", "kind": "buildings"},
+  "investing-in-canberra-s-arts-sector": {"short": "Investing in Canberra’s Arts Sector", "kind": "arts"},
+  "improving-canberra-s-health-infrastructure-new-health-centre": {"short": "New Health Centres across the ACT", "kind": "health"},
+  "improving-canberra-s-health-infrastructure-expanding-health-": {"short": "Expanding health centres across the city", "kind": "health"},
+  "strengthening-emergency-services-planning-for-the-molonglo-v": {"short": "Planning for the Molonglo Valley Police Station", "kind": "emergency"},
+  "30-000-homes-by-2030-public-housing-pipeline": {"short": "Public housing pipeline", "kind": "housing"},
+  "improving-mugga-lane-landfill-capacity": {"short": "Improving Mugga Lane landfill capacity", "kind": "waste"},
+  "climate-action-moving-more-government-facilities-off-gas": {"short": "Moving more government facilities off gas", "kind": "climate"},
+  "strengthening-emergency-services-early-works-for-the-casey-e": {"short": "Early works for the Casey Emergency Services Station", "kind": "emergency"},
+  "well-prepared-emergency-services-molonglo-station-and-casey-": {"short": "Molonglo Station and Casey Station", "kind": "emergency"},
+  "public-pool-upgrades-operations-and-maintenance": {"short": "Public pool upgrades and upkeep", "kind": "sport"},
+  "office-accommodation": {"short": "Office Accommodation", "kind": "buildings"},
+  "better-community-infrastructure-refurbishing-community-and-g": {"short": "Refurbishing community and government buildings", "kind": "buildings"},
+  "act-government-office-accommodation-consolidation": {"short": "Moving government staff into fewer offices", "kind": "buildings"},
+  "more-services-for-our-suburbs-upgrading-the-old-kingston-bus": {"short": "Upgrading the Old Kingston Bus Depot", "kind": "transport"},
+  "better-community-infrastructure-refurbishing-canberra-s-publ": {"short": "Refurbishing Canberra’s public pools", "kind": "sport"},
+  "new-and-expanded-schools-telopea-park-high-school-modernisat": {"short": "Telopea Park High School modernisation", "kind": "schools"},
+  "throsby-district-playing-field": {"short": "Throsby District Playing Field", "kind": "sport"}
+ }
+};
