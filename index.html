@@ -15,6 +15,12 @@
      so this page works when double-clicked locally AND on GitHub Pages. -->
 <script src="data.js"></script>
 
+<!-- Our research into the 23 projects the Budget leaves unplaced. This does
+     NOT change data.js: it is a separate overlay, keyed by project id, and
+     every call in it carries its own confidence and its own evidence. The
+     page works without this file — the toggle simply does not appear. -->
+<script src="data/scoping/scoping.js"></script>
+
 <style>
   :root{
     --surface:#fcfcfb; --card:#fff; --line:#e6e2da;
@@ -123,6 +129,16 @@
   .offcard.on{border-style:solid;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .offhead{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);
     margin-bottom:8px}
+  /* The scoping toggle. Off by default: data.js is the verified extraction,
+     this overlay is our own research sitting on top of it. */
+  .scopebox{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin:4px 0 14px}
+  .scopebox.on{border-color:var(--accent-b);background:#f6fbfd}
+  .scopebox p{margin-bottom:0}
+  .scopetop{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+  .scopetop input{margin:3px 0 0;width:19px;height:19px;flex:none;
+    accent-color:var(--accent-b);cursor:pointer}
+  .scopetop input:focus-visible{outline:3px solid var(--accent-b);outline-offset:2px}
   @media (max-width:520px){ .barlabel{width:104px} .barval{width:92px;font-size:13px} }
 </style>
 </head>
@@ -136,6 +152,17 @@ const DATA   = (typeof window !== "undefined" && window.DATA)   || [];
 const META   = (typeof window !== "undefined" && window.META)   || {};
 const PLAIN  = (typeof window !== "undefined" && window.PLAIN)  || {};
 const COUNTS = META.counts || {};
+// Optional. If data/scoping/scoping.js is absent the toggle never appears
+// and the page behaves exactly as it did before.
+const SCOPING = (typeof window !== "undefined" && window.SCOPING) || {};
+const HAS_SCOPING = Array.isArray(SCOPING.projects) && SCOPING.projects.length > 0;
+// How sure we are, in words. The overlay's own scale is keyed the same way.
+const SURE = {
+  budget_confirmed: "The Budget names the place",
+  strong:           "Named by government, outside the Budget",
+  partial:          "Sites known, split not published",
+  unplaceable:      "No place to find"
+};
 
 // All budget figures are $'000, so 61753 means $61,753,000. This page never
 // shows the $'000 form: a reader who has not seen a Budget paper reads
@@ -277,14 +304,47 @@ const YEARS = [
 
 function App(){
   const [sel, setSel]       = useState(() => store.get("acr.district", ""));
+  // Off by default. data.js is the verified extraction from the Budget
+  // papers; the overlay is our research on top of it. The Budget's own
+  // answer is what you see until you ask for ours.
+  const [scoped, setScoped] = useState(() => store.get("acr.scoped", "0") === "1");
+  useEffect(() => { store.set("acr.scoped", scoped ? "1" : "0"); }, [scoped]);
   const [openRow, setOpenRow] = useState(null);
   useEffect(() => { store.set("acr.district", sel); }, [sel]);
 
   // ── Group the 53 published rows by district. The grouping is ours;
   //    the figures inside it are Treasury's, one row at a time.
+  // Every project, with the district we will actually group it under. With
+  // the overlay off that is always the Budget's own answer. With it on, the
+  // eight projects we placed to a single district move there, and the six we
+  // could only narrow to a set move to Multiple. The nine we could not place
+  // at all do not move: they stay where the Budget left them.
+  const projects = useMemo(() => DATA.map(r => {
+    const sc = (scoped && SCOPING.byId) ? SCOPING.byId[r.id] : null;
+    let district = r.district;
+    if (sc) {
+      if (sc.placement === "single_district") district = sc.scoped_district;
+      else if (sc.placement === "multi_district") district = "Multiple";
+    }
+    return {...r, district, moved: district !== r.district,
+            scoping: (SCOPING.byId && SCOPING.byId[r.id]) || null};
+  }), [scoped]);
+
+  // Headline counts for the toggle's explanation. Computed from the overlay
+  // itself so the sentence can never drift from the file.
+  const scopeStats = useMemo(() => {
+    const b = {single:{n:0,$:0}, multi:{n:0,$:0}, none:{n:0,$:0}};
+    (SCOPING.projects || []).forEach(p => {
+      const k = p.placement === "single_district" ? "single"
+              : p.placement === "multi_district"  ? "multi" : "none";
+      b[k].n += 1; b[k].$ += p.spend_2026_27;
+    });
+    return b;
+  }, []);
+
   const districts = useMemo(() => {
     const m = new Map();
-    DATA.forEach(r => {
+    projects.forEach(r => {
       if (!m.has(r.district)) m.set(r.district, {name:r.district, rows:[], spend:0, value:0, valueUnknown:0});
       const g = m.get(r.district);
       g.rows.push(r);
@@ -294,7 +354,7 @@ function App(){
     });
     return [...m.values()].sort((a,b) =>
       (TAIL[a.name]||0) - (TAIL[b.name]||0) || b.spend - a.spend);
-  }, []);
+  }, [projects]);
 
   if (!DATA.length){
     return (
@@ -380,6 +440,35 @@ function App(){
           ))}
         </div>
       </div>
+      {HAS_SCOPING && (
+        <div className={"scopebox" + (scoped ? " on" : "")}>
+          <label className="scopetop">
+            <input type="checkbox" checked={scoped}
+                   onChange={e => { setScoped(e.target.checked); setOpenRow(null); }} />
+            <span>
+              <b>Show the places we found ourselves</b>
+              <span className="lab" style={{display:"block", marginTop:4,
+                    textTransform:"none", letterSpacing:0}}>
+                {scoped ? "On — showing our research" : "Off — showing only what the Budget says"}
+              </span>
+            </span>
+          </label>
+          <p style={{margin:"10px 0 0", fontSize:15}}>
+            The Budget gives no location for {SCOPING.projects.length} projects
+            worth {money(COUNTS.unlocatable_spend)}. We went looking. We placed{" "}
+            <b>{scopeStats.single.n} of them, {money(scopeStats.single.$)}</b>, in one
+            district. Another {scopeStats.multi.n} ({money(scopeStats.multi.$)}) are
+            spread over several. {scopeStats.none.n} ({money(scopeStats.none.$)}) genuinely
+            have no place to find — a provision, a program across every government
+            building, or a pipeline whose sites are not chosen yet.
+          </p>
+          <p style={{margin:"8px 0 0", fontSize:15}}>
+            This is our work, not the Budget's. Every project below shows how sure
+            we are. Turning this off returns the page to the Budget's own answer.
+          </p>
+        </div>
+      )}
+
       <p className="note" style={{marginBottom:18}}>
         The shapes show roughly where each district sits and how big it is.
         They are drawn by hand, not surveyed, and nothing is measured off
@@ -522,7 +611,23 @@ function App(){
                     {help ? help : longDate(r.completion)}
                     <span className="official">Budget prints: {r.completion || "nothing"}</span>
                   </td>
-                  <td>{districtLabel(r.district)}</td>
+                  <td>
+                    {districtLabel(r.district)}
+                    {r.moved && (
+                      <span className="official">
+                        Our research, not the Budget. The Budget gives no
+                        location for this one.
+                        {r.scoping && SURE[r.scoping.confidence]
+                          ? " " + SURE[r.scoping.confidence] + "."
+                          : ""}
+                        {r.scoping && r.scoping.sites && r.scoping.sites.length
+                          ? " Site: " + r.scoping.sites.map(s =>
+                              typeof s === "string" ? s : (s.name || s.site || "")
+                            ).filter(Boolean).join("; ") + "."
+                          : ""}
+                      </span>
+                    )}
+                  </td>
                 </tr>
 
                 {openRow === r.id && (
