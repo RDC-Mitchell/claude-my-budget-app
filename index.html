@@ -97,6 +97,32 @@
   footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);
     font-size:14px;color:var(--ink-3)}
   a{color:var(--accent-b)}
+  /* ── District map ────────────────────────────────────────────────
+     Hand-drawn shapes. They carry relative position and rough relative
+     size, so Belconnen and Tuggeranong read as the big ones they are.
+     They are NOT survey boundaries and no figure is read off their area.
+     The button grid below is the real control; this is a pointer-only
+     second route to the same state. */
+  .mapwrap{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .mapfig{flex:1 1 300px;max-width:390px;margin:0}
+  .map{width:100%;height:auto;display:block}
+  .map .z{cursor:pointer}
+  .map .z.empty{cursor:default}
+  .map .zone{fill:var(--accent-a);stroke:#fff;stroke-width:1.5;stroke-linejoin:round}
+  .map .z:hover .zone{stroke:var(--ink);stroke-width:2}
+  .map .z.on .zone{stroke:var(--ink);stroke-width:3}
+  .map .zlab{font-size:11.5px;font-weight:600;fill:#fff;pointer-events:none}
+  .map .zval{font-size:10px;fill:#fff;pointer-events:none;font-variant-numeric:tabular-nums}
+  .map .dark{fill:var(--ink)}
+  .map .darksub{fill:var(--ink-2)}
+  .map .lake{fill:none;stroke:var(--accent-b);stroke-width:5;stroke-linecap:round;opacity:.5}
+  .map .lakelab{font-size:9px;fill:var(--accent-b);opacity:.9}
+  .offmap{flex:1 1 200px;min-width:0}
+  .offcard{background:var(--card);border:1px dashed var(--ink-3);border-radius:10px;
+    padding:12px 14px;margin-bottom:8px;cursor:pointer}
+  .offcard.on{border-style:solid;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .offhead{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);
+    margin-bottom:8px}
   @media (max-width:520px){ .barlabel{width:104px} .barval{width:92px;font-size:13px} }
 </style>
 </head>
@@ -136,6 +162,93 @@ const store = {
 // Territory-wide and Multiple always sort last: they are not places.
 const TAIL = { "Territory-wide": 2, "Multiple": 1 };
 const districtLabel = d => (PLAIN.districts && PLAIN.districts[d]) || d;
+
+// ── The map ────────────────────────────────────────────────────────
+// Eight hand-drawn shapes, inline SVG, no external geometry file and no
+// build step. They hold two honest signals: where a district sits
+// relative to the others, and roughly how big it is on the ground.
+// Everything else about them is decoration. Nothing quantitative is read
+// off their area — section 3's bars do that work, on one shared scale.
+//
+// Written from knowledge of Canberra, not traced from a survey. Belconnen
+// north-west, Gungahlin north-east, the inner north and inner south either
+// side of Lake Burley Griffin, Molonglo along its river, Weston Creek and
+// Woden side by side below, Tuggeranong in the far south.
+const SHAPES = [
+  {name:"Gungahlin", lx:238, ly:52, lines:["Gungahlin"],
+   d:"M162 22 L300 16 L312 44 Q316 66 296 80 L246 96 Q210 106 190 88 L166 62 Q156 40 162 22 Z"},
+  {name:"Belconnen", lx:96, ly:112, lines:["Belconnen"],
+   d:"M34 66 Q60 50 96 54 L152 60 Q170 74 166 96 L172 130 Q168 158 146 170 L96 186 Q58 184 40 160 L26 122 Q20 88 34 66 Z"},
+  {name:"North Canberra", lx:220, ly:136, lines:["North","Canberra"],
+   d:"M178 100 L244 96 Q264 104 266 124 L268 158 Q262 178 242 184 L200 186 Q180 178 176 158 L172 126 Q170 108 178 100 Z"},
+  {name:"Molonglo", lx:102, ly:218, lines:["Molonglo"],
+   d:"M44 196 Q80 184 116 190 L156 196 Q174 206 168 226 Q162 246 142 252 L92 258 Q56 258 42 240 Q32 216 44 196 Z"},
+  {name:"South Canberra", lx:230, ly:242, lines:["South","Canberra"],
+   d:"M190 206 L248 202 Q274 208 278 232 L282 262 Q276 288 254 294 L216 296 Q194 290 188 268 L182 236 Q182 214 190 206 Z"},
+  {name:"Weston Creek", lx:76, ly:294, lines:["Weston","Creek"],
+   d:"M46 272 Q76 262 100 270 L114 288 Q120 310 108 324 L78 336 Q50 334 38 318 Q30 294 46 272 Z"},
+  {name:"Woden Valley", lx:152, ly:296, lines:["Woden","Valley"],
+   d:"M128 274 L168 268 Q188 276 190 296 L188 320 Q180 338 158 340 L134 338 Q120 328 118 308 Q116 288 128 274 Z"},
+  {name:"Tuggeranong", lx:170, ly:392, lines:["Tuggeranong"],
+   d:"M104 350 L212 344 Q242 352 250 376 L246 406 Q238 434 214 446 L170 460 Q134 458 116 436 L96 404 Q88 372 104 350 Z"}
+];
+
+// Short form for inside a shape. money() is written for prose and returns
+// "$134.3 million", which will not fit in Weston Creek.
+const mapMoney = k =>
+  k >= 1000 ? "$" + (k/1000).toFixed(k < 10000 ? 1 : 0) + "m" : "$" + k + "k";
+
+function DistrictMap({districts, active, onPick}){
+  const by  = new Map(districts.map(d => [d.name, d]));
+  const max = Math.max(...SHAPES.map(s => (by.get(s.name) || {spend:0}).spend), 1);
+
+  return (
+    <svg className="map" viewBox="0 0 360 476" role="img"
+         aria-label={"Sketch map of Canberra's eight districts, shaded by how much " +
+           "capital money each one gets in 2026-27. Position and size are " +
+           "approximate. The same choice is available as buttons below."}>
+
+      {SHAPES.map(s => {
+        const d  = by.get(s.name);
+        const sp = d ? d.spend : 0;
+        // Opacity, not hue: the palette gives one accent for this series.
+        // The power curve keeps Weston Creek visible next to Molonglo.
+        const o  = d ? 0.20 + 0.72 * Math.pow(sp / max, 0.6) : 0.06;
+        const on = active && active.name === s.name;
+        const pale = o < 0.5;                    // dark text on a light fill
+        const multi = s.lines.length > 1;
+        return (
+          <g key={s.name} className={"z" + (on ? " on" : "") + (d ? "" : " empty")}
+             onClick={d ? () => onPick(s.name) : undefined}>
+            <title>
+              {districtLabel(s.name)}
+              {d ? " — " + d.rows.length + " project" + (d.rows.length === 1 ? "" : "s") +
+                   ", " + money(d.spend) + " in 2026-27"
+                 : " — no projects in this Budget"}
+            </title>
+            <path className="zone" d={s.d} fillOpacity={o} />
+            {s.lines.map((t, i) => (
+              <text key={i} x={s.lx} textAnchor="middle"
+                    className={"zlab" + (pale ? " dark" : "")}
+                    y={multi ? s.ly + i * 12 : s.ly}>{t}</text>
+            ))}
+            {d && (
+              <text x={s.lx} textAnchor="middle"
+                    className={"zval" + (pale ? " darksub" : "")}
+                    y={s.ly + (multi ? 26 : 14)}>{mapMoney(sp)}</text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Lake Burley Griffin. Orientation only — it is the one line that
+          makes the rest of the sketch read as Canberra. */}
+      <path className="lake"
+            d="M116 200 C154 190 190 203 226 197 C250 193 264 190 276 186" />
+      <text className="lakelab" x="118" y="214">Lake Burley Griffin</text>
+    </svg>
+  );
+}
 
 // Plain name and category for a project. Falls back to the official title,
 // so a row added to data.js without a PLAIN entry still renders.
@@ -242,6 +355,41 @@ function App(){
 
       {/* ── 1. PICK ONE ─────────────────────────────────────── */}
       <h2>1. Pick your district</h2>
+
+      {/* The map and the off-map panel are a pointer-only shortcut. The
+          button grid underneath is the real control and carries the
+          keyboard and screen-reader story, so these are not extra tab
+          stops repeating what is already below. */}
+      <div className="mapwrap">
+        <figure className="mapfig">
+          <DistrictMap districts={districts} active={active}
+                       onPick={n => { setSel(n); setOpenRow(null); }} />
+        </figure>
+        <div className="offmap" aria-hidden="true">
+          <div className="offhead">Money with nowhere to put it</div>
+          {districts.filter(d => TAIL[d.name])
+                    .sort((a, b) => b.spend - a.spend).map(d => (
+            <div key={d.name}
+                 className={"offcard" + (d.name === active.name ? " on" : "")}
+                 onClick={() => { setSel(d.name); setOpenRow(null); }}>
+              <b>{districtLabel(d.name)}</b>
+              <div className="lab" style={{marginTop:6, textTransform:"none", letterSpacing:0}}>
+                {d.rows.length} project{d.rows.length === 1 ? "" : "s"} · {money(d.spend)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="note" style={{marginBottom:18}}>
+        The shapes show roughly where each district sits and how big it is.
+        They are drawn by hand, not surveyed, and nothing is measured off
+        them. Shading is this year's spending. The projects on the right have
+        no single place to sit — together they are{" "}
+        {money(districts.filter(d => TAIL[d.name]).reduce((a, d) => a + d.spend, 0))} of
+        the {money(COUNTS.total_spend_2026_27)} in this Budget, so leaving
+        them off the map would hide the largest group of all.
+      </p>
+
       <div className="grid">
         {districts.map(d => (
           <button key={d.name} className="card" aria-pressed={d.name === active.name}
