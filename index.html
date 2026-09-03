@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Budget App</title>
+<title>What's being built in your district — 2026-27 ACT Budget</title>
 
 <!-- Pinned versions on purpose. An unpinned CDN library shipped a breaking
      change once and silently broke the live Budget Buddy site. Always pin. -->
@@ -11,20 +11,19 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
 
-<!-- YOUR DATA GOES IN data.js, NOT IN THIS FILE.
-     It's a plain script tag, not fetch(), so this page works both when you
-     double-click it locally AND when it's live on GitHub Pages. -->
+<!-- Data lives in data.js, not in this file. Plain script tag, not fetch(),
+     so this page works when double-clicked locally AND on GitHub Pages. -->
 <script src="data.js"></script>
 
 <style>
   :root{
     --surface:#fcfcfb; --card:#fff; --line:#e6e2da;
     --ink:#2b2420; --ink-2:#5c5249; --ink-3:#857a6e;
-    --accent-a:#b85042;   /* validated pair: use for one series */
-    --accent-b:#0f7ba8;   /* validated pair: use for the other  */
+    --accent-a:#b85042;   /* validated pair: 2026-27 spend        */
+    --accent-b:#0f7ba8;   /* validated pair: total project value  */
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--surface);color:var(--ink);
+  body{margin:0;background:var(--surface);color:var(--ink);overflow-x:hidden;
     font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .wrap{max-width:860px;margin:0 auto;padding:28px 20px 80px}
   h1{font-size:26px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
@@ -33,120 +32,325 @@
     margin:34px 0 12px;font-weight:600}
   .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
-  button.card{text-align:left;font:inherit;color:inherit;cursor:pointer}
+  button.card{text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
   button.card:focus-visible{outline:3px solid var(--accent-b);outline-offset:2px}
   button.card[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .lab{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3)}
   .val{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-top:4px;
     font-variant-numeric:tabular-nums}
+  .note{font-size:13px;color:var(--ink-3);margin:10px 0 0}
   /* Bars: .track and .bar MUST be display:block. They are spans in a lot of
      generated code, and inline elements ignore width and height. */
   .track{display:block;flex:1;height:16px;background:#f2efe9;border-radius:0 4px 4px 0}
-  .bar{display:block;height:16px;border-radius:0 4px 4px 0}
-  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
-    border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:block;height:16px;border-radius:0 4px 4px 0;min-width:2px}
+  .barrow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .barlabel{width:132px;flex:none;font-size:13px}
+  .barval{width:74px;flex:none;text-align:right;font-size:13px;
+    font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  .barsel .barlabel{font-weight:600}
+  .barsel .track{outline:2px solid var(--ink);outline-offset:2px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;
+    margin-right:6px;vertical-align:baseline;flex:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-bottom:12px}
+  .scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
+    border-radius:10px;background:var(--card)}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:660px}
   th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line)}
   th:first-child,td:first-child{text-align:left}
   thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;
     color:var(--ink-3);background:#faf9f6}
   td{font-variant-numeric:tabular-nums}
+  tr.detail td{background:#faf9f6;text-align:left;font-size:13px;color:var(--ink-2)}
+  button.link{background:none;border:0;padding:0;font:inherit;color:var(--accent-b);
+    cursor:pointer;text-align:left;text-decoration:underline}
+  .flag{color:#8a3a1f;background:#fdf1ea;border-left:3px solid var(--accent-a);
+    padding:7px 10px;margin:6px 0;border-radius:0 4px 4px 0;font-size:13px}
+  .convention{background:#fdf6ec;border:1px solid #e8d6b8;color:#6b4f27;
+    border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px}
+  .caveats{font-size:13px;color:var(--ink-2);padding-left:20px;margin:0}
+  .caveats li{margin-bottom:7px}
+  .mini{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;min-width:0}
+  .mini th,.mini td{padding:5px 8px;border-bottom:1px solid var(--line)}
   footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);
     font-size:13px;color:var(--ink-3)}
   a{color:var(--accent-b)}
+  @media (max-width:520px){ .barlabel{width:96px} .barval{width:64px} }
 </style>
 </head>
 <body>
 <div id="root" class="wrap"></div>
 
 <script type="text/babel">
-const {useState, useEffect} = React;
+const {useState, useEffect, useMemo} = React;
 
-// ─────────────────────────────────────────────────────────────
-// data.js sets window.DATA. Until you make your own, this is an
-// empty array and the page tells you so.
-// ─────────────────────────────────────────────────────────────
-const DATA = (typeof window !== "undefined" && window.DATA) || [];
+const DATA   = (typeof window !== "undefined" && window.DATA)   || [];
+const META   = (typeof window !== "undefined" && window.META)   || {};
+const COUNTS = META.counts || {};
 
-const money = n => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-AU");
+// All budget figures are $'000, so 61753 means $61.753 million.
+function money(k){
+  if (k === null || k === undefined || k === "") return "—";
+  if (typeof k === "string") return k;               // "TBD", "Ongoing"
+  const sign = k < 0 ? "-" : "", a = Math.abs(k);
+  return a >= 1000 ? sign+"$"+(a/1000).toFixed(1)+"m"
+                   : sign+"$"+a.toLocaleString("en-AU")+"k";
+}
+const isNum = v => typeof v === "number" && isFinite(v);
+const store = {
+  get(k, d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
 
-function App() {
-  const [sel, setSel] = useState(() => localStorage.getItem("app.sel") || "");
-  useEffect(() => { localStorage.setItem("app.sel", sel); }, [sel]);
+// Territory-wide and Multiple always sort last: they are not places.
+const TAIL = { "Territory-wide": 2, "Multiple": 1 };
+const districtLabel = d =>
+  d === "Territory-wide" ? "Territory-wide / can't be placed"
+  : d === "Multiple"     ? "Multiple districts"
+  : d;
 
-  if (!DATA.length) {
+function App(){
+  const [sel, setSel]       = useState(() => store.get("acr.district", ""));
+  const [openRow, setOpenRow] = useState(null);
+  useEffect(() => { store.set("acr.district", sel); }, [sel]);
+
+  // ── Group the 53 published rows by district. The grouping is ours;
+  //    the figures inside it are Treasury's, one row at a time.
+  const districts = useMemo(() => {
+    const m = new Map();
+    DATA.forEach(r => {
+      if (!m.has(r.district)) m.set(r.district, {name:r.district, rows:[], spend:0, value:0, valueUnknown:0});
+      const g = m.get(r.district);
+      g.rows.push(r);
+      g.spend += r.spend_2026_27;
+      if (isNum(r.total_project_value)) g.value += r.total_project_value;
+      else g.valueUnknown += 1;
+    });
+    return [...m.values()].sort((a,b) =>
+      (TAIL[a.name]||0) - (TAIL[b.name]||0) || b.spend - a.spend);
+  }, []);
+
+  if (!DATA.length){
     return (
       <React.Fragment>
-        <h1>Hello, Budget</h1>
-        <p className="sub">
-          Your template is live. If you can read this on your own GitHub Pages
-          URL, your setup is done and you're ready for the workshop.
-        </p>
-        <div className="card">
-          <div className="lab">Next step</div>
-          <p style={{marginBottom:0}}>
-            Replace <code>data.js</code> with your own extracted data, then
-            build your screens below. See <code>ANNOTATED.md</code> for a
-            walkthrough of this file.
-          </p>
-        </div>
-        <div className="card" style={{marginTop:10, background:"#fdf6ec",
-             borderColor:"#e8d6b8"}}>
-          <div className="lab" style={{color:"#6b4f27"}}>Already uploaded your data?</div>
+        <h1>No data loaded</h1>
+        <div className="card" style={{background:"#fdf6ec", borderColor:"#e8d6b8"}}>
+          <div className="lab" style={{color:"#6b4f27"}}>Already uploaded data.js?</div>
           <p style={{marginBottom:0, color:"#6b4f27"}}>
-            Then your browser is showing you a <strong>cached copy</strong> of the
-            old empty <code>data.js</code>. Hard refresh:
-            {" "}<strong>Cmd+Shift+R</strong> on Mac, <strong>Ctrl+Shift+R</strong> on
-            Windows. This catches almost everyone once.
+            Your browser is showing a <strong>cached copy</strong> of the old empty
+            <code> data.js</code>. Hard refresh: <strong>Cmd+Shift+R</strong> on Mac,
+            <strong> Ctrl+Shift+R</strong> on Windows.
           </p>
         </div>
       </React.Fragment>
     );
   }
 
-  const item = DATA.find(d => String(d.id) === sel) || DATA[0];
+  const active  = districts.find(d => d.name === sel) || districts[0];
+  const maxBar  = Math.max(...districts.map(d => Math.max(d.spend, d.value)));
+  const noDate  = active.rows.filter(r => !r.date_published).length;
+  const rows    = [...active.rows].sort((a,b) => b.spend_2026_27 - a.spend_2026_27);
 
   return (
     <React.Fragment>
-      {/* ── 1. TITLE ─────────────────────────────────────────── */}
-      <h1>My Budget App</h1>
-      <p className="sub">One sentence: who this is for and what they get in 30 seconds.</p>
+      <h1>What's being built in your district</h1>
+      <p className="sub">
+        Every capital project in the 2026-27 ACT Budget, what it costs this year,
+        and when it's due. {COUNTS.projects} projects, {money(COUNTS.total_spend_2026_27)} for 2026-27.
+      </p>
 
-      {/* ── 2. PICK ONE ──────────────────────────────────────── */}
-      <h2>1. Pick one</h2>
+      {/* ── 1. PICK ONE ─────────────────────────────────────── */}
+      <h2>1. Pick your district</h2>
       <div className="grid">
-        {DATA.map(d => (
-          <button key={d.id} className="card" aria-pressed={String(d.id) === sel}
-                  onClick={() => setSel(String(d.id))}>
-            <b>{d.name || d.id}</b>
+        {districts.map(d => (
+          <button key={d.name} className="card" aria-pressed={d.name === active.name}
+                  onClick={() => { setSel(d.name); setOpenRow(null); }}>
+            <b>{districtLabel(d.name)}</b>
+            <div className="lab" style={{marginTop:6}}>
+              {d.rows.length} project{d.rows.length === 1 ? "" : "s"} · {money(d.spend)}
+            </div>
           </button>
         ))}
       </div>
 
-      {/* ── 3. HEADLINE NUMBERS ──────────────────────────────── */}
-      <h2>2. What it means</h2>
+      {/* ── 2. THREE STAT TILES ─────────────────────────────── */}
+      <h2>2. {districtLabel(active.name)} in 2026-27</h2>
       <div className="grid">
         <div className="card">
-          <div className="lab">Your headline number</div>
-          <div className="val">{money(item.value || 0)}</div>
+          <div className="lab">Projects</div>
+          <div className="val">{active.rows.length}</div>
         </div>
-        {/* ADD YOUR OTHER STAT TILES HERE */}
+        <div className="card">
+          <div className="lab">Spend in 2026-27</div>
+          <div className="val">{money(active.spend)}</div>
+        </div>
+        <div className="card">
+          <div className="lab">No completion date</div>
+          <div className="val">{noDate}</div>
+        </div>
+      </div>
+      <p className="note">
+        District grouping is ours, not Treasury's. The Budget does not publish
+        spending by district.
+      </p>
+
+      {/* ── 3. COMPARISON ───────────────────────────────────── */}
+      <h2>3. Every district compared</h2>
+      <div className="legend">
+        <span><span className="dot" style={{background:"var(--accent-a)"}}></span>Spend in 2026-27</span>
+        <span><span className="dot" style={{background:"var(--accent-b)"}}></span>Total project value, all years</span>
+      </div>
+      {districts.map(d => (
+        <div key={d.name} className={d.name === active.name ? "barsel" : ""}
+             style={{marginBottom:14}}>
+          <div className="barrow">
+            <span className="barlabel">
+              <span className="dot" style={{background:"var(--accent-a)"}}></span>
+              {districtLabel(d.name)}
+            </span>
+            <span className="track">
+              <span className="bar" style={{width:(d.spend/maxBar*100)+"%",
+                    background:"var(--accent-a)"}}></span>
+            </span>
+            <span className="barval">{money(d.spend)}</span>
+          </div>
+          <div className="barrow">
+            <span className="barlabel" style={{color:"var(--ink-3)",fontSize:12}}>
+              <span className="dot" style={{background:"var(--accent-b)"}}></span>
+              total value
+            </span>
+            <span className="track">
+              <span className="bar" style={{width:(d.value/maxBar*100)+"%",
+                    background:"var(--accent-b)"}}></span>
+            </span>
+            <span className="barval">{money(d.value)}</span>
+          </div>
+        </div>
+      ))}
+      <p className="note">
+        Both bars share one scale, so you can see how much of a multi-year
+        commitment lands in 2026-27. Projects whose total value is published as
+        "TBD" or "Ongoing" are excluded from the blue bar only
+        ({DATA.filter(r => !isNum(r.total_project_value)).length} of {DATA.length} projects).
+      </p>
+
+      {/* ── 4. FULL TABLE ───────────────────────────────────── */}
+      <h2>4. Every project in {districtLabel(active.name)}</h2>
+      <div className="scroller">
+        <table>
+          <thead>
+            <tr>
+              <th>Project</th><th>2026-27</th><th>Total value</th>
+              <th>Due</th><th>District</th><th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <React.Fragment key={r.id}>
+                <tr>
+                  <td>
+                    <span className="dot" style={{background:"var(--accent-a)"}}></span>
+                    {r.appropriation.length > 0 ? (
+                      <button className="link"
+                              aria-expanded={openRow === r.id}
+                              onClick={() => setOpenRow(openRow === r.id ? null : r.id)}>
+                        {r.project}
+                      </button>
+                    ) : r.project}
+                    {r.appropriation.length > 0 &&
+                      <span className="lab" style={{marginLeft:6}}>
+                        {r.appropriation.length} change{r.appropriation.length === 1 ? "" : "s"}
+                      </span>}
+                  </td>
+                  <td>{money(r.spend_2026_27)}</td>
+                  <td>{money(r.total_project_value)}</td>
+                  <td>{r.completion}</td>
+                  <td>{districtLabel(r.district)}</td>
+                  <td>{r.source}</td>
+                </tr>
+
+                {openRow === r.id && (
+                  <tr className="detail">
+                    <td colSpan={6}>
+                      <div className="convention">
+                        <strong>Read this before the numbers below.</strong>{" "}
+                        {META.sign_convention}
+                      </div>
+                      <p style={{margin:"8px 0 0"}}>
+                        Every change-to-appropriation row for this initiative.
+                        These are adjustments against the previous Budget.{" "}
+                        <strong>They are not extra money and must not be added to
+                        the {money(r.spend_2026_27)} above.</strong>
+                      </p>
+                      <table className="mini">
+                        <thead>
+                          <tr>
+                            <th>Item</th><th>2025-26</th><th>2026-27</th>
+                            <th>2027-28</th><th>2028-29</th><th>2029-30</th><th>Type</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {r.appropriation.map((a, i) => (
+                            <tr key={i}>
+                              <td>{a.item}<br/>
+                                <span className="lab">
+                                  {a.statement}, Table {a.table}
+                                  {a.section ? " · " + a.section : ""}
+                                </span>
+                              </td>
+                              <td>{money(a.y2025_26)}</td>
+                              <td>{money(a.y2026_27)}</td>
+                              <td>{money(a.y2027_28)}</td>
+                              <td>{money(a.y2028_29)}</td>
+                              <td>{money(a.y2029_30)}</td>
+                              <td>{a.is_reprofile ? "Timing change" : "Other"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {isNum(r.appropriation_net_2026_27) && (
+                        <p style={{margin:"8px 0 0"}}>
+                          Net across all rows for 2026-27:{" "}
+                          <strong>{money(r.appropriation_net_2026_27)}</strong>
+                        </p>
+                      )}
+                      {r.appropriation.filter(a => a.flag).map((a, i) => (
+                        <div className="flag" key={i}>
+                          <strong>Flag on "{a.item}":</strong> {a.flag}
+                        </div>
+                      ))}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* ── 4. THE DETAIL ────────────────────────────────────── */}
-      {/* ADD YOUR TABLE OR CHART HERE */}
+      {/* ── 5. CAVEATS. These stay on screen. ───────────────── */}
+      <h2>What this does and doesn't show</h2>
+      <ul className="caveats">
+        {(META.caveats || []).map((c, i) => <li key={i}>{c}</li>)}
+        <li>
+          These {COUNTS.projects} projects total $924,594k. The Budget's printed
+          Total Capital Program is $929,850k. The $5,256k difference is the Asset
+          Renewal Program and subtotal lines, which are excluded here to avoid
+          double counting.
+        </li>
+      </ul>
 
-      {/* ── 5. CITATION. Do not delete this. ─────────────────── */}
+      {/* ── 6. CITATION. Do not delete this. ────────────────── */}
       <footer>
         <p>
-          Every figure comes from <strong>[NAME THE EXACT TABLE AND STATEMENT]</strong>,
+          Every figure comes from <strong>{META.primary_source}</strong>, with
+          change history from <strong>{META.appropriation_source}</strong>,
           2026-27 ACT Budget. See the{" "}
-          <a href="https://www.treasury.act.gov.au/budget/budget-2026-27/budget-papers-and-statements">
-            official Budget papers</a>.
+          <a href={META.budget_url}>official Budget papers</a>. Values are {META.unit}.
         </p>
         <p>
           This is an illustrative guide, not financial advice or an eligibility
-          determination. Check <a href="https://www.act.gov.au">act.gov.au</a> for
-          eligibility criteria and exact figures.
+          determination. Check <a href="https://www.act.gov.au">act.gov.au</a> and
+          the official papers before quoting a figure.
         </p>
         <p>Your selection is saved in this browser only. Nothing is sent anywhere.</p>
       </footer>
