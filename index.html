@@ -74,6 +74,32 @@
   footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);
     font-size:13px;color:var(--ink-3)}
   a{color:var(--accent-b)}
+
+  /* ── Schematic district map ──────────────────────────────────────────
+     Hand-drawn shapes. They carry RELATIVE POSITION only: they are not
+     survey boundaries, and their areas are not quantities. The card grid
+     below is the canonical picker, so the map stays role="img" and is a
+     pointer-only second route to the same state. */
+  .map{display:block;width:100%;max-width:420px;height:auto;margin:0 auto 10px}
+  .z{cursor:pointer}
+  .z .zone{fill:var(--card);stroke:#d9d3c7;stroke-width:1.5;
+    vector-effect:non-scaling-stroke;transition:fill .12s ease}
+  .z:hover:not(.on) .zone{fill:#f2efe9}
+  .z.on .zone{fill:var(--accent-a);stroke:var(--accent-a)}
+  .z.on .zlab{fill:#fff}
+  .z.on .zsub{fill:#f7e2de}
+  .z.off .zone{fill:#faf9f6;stroke-dasharray:4 3}
+  .z.off.on .zone{stroke-dasharray:none}
+  .z.empty{cursor:default}
+  .z.empty .zone{fill:#faf9f6;opacity:.55}
+  .zlab{font-size:11px;font-weight:600;fill:var(--ink);pointer-events:none}
+  .zsub{font-size:8.5px;fill:var(--ink-3);pointer-events:none;
+    font-variant-numeric:tabular-nums}
+  .lake{fill:none;stroke:#bcd8e2;stroke-width:4;stroke-linecap:round;
+    pointer-events:none}
+  .mapline{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+  .maphead{font-size:9px;letter-spacing:.08em;fill:var(--ink-3);
+    text-transform:uppercase;pointer-events:none}
   @media (max-width:520px){ .barlabel{width:96px} .barval{width:64px} }
 </style>
 </head>
@@ -107,6 +133,95 @@ const districtLabel = d =>
   d === "Territory-wide" ? "Territory-wide / can't be placed"
   : d === "Multiple"     ? "Multiple districts"
   : d;
+
+
+// ── The map ───────────────────────────────────────────────────────────
+// Nine shapes, drawn by hand. They are deliberately loose: the point is to
+// let someone find themselves, not to assert a boundary. Area encodes
+// nothing — section 3's bars carry the money.
+//
+// Two of the ten groups are not places. Territory-wide alone is 43% of the
+// 2026-27 program, so it gets its own panel under the map at a weight you
+// cannot miss, rather than being dropped off the bottom of the picture.
+const SHAPES = [
+  {name:"Gungahlin",      lx:232, ly:56,  lines:["Gungahlin"],
+   d:"M168 18 L292 12 L308 52 L286 92 L200 96 L164 66 Z"},
+  {name:"Belconnen",      lx:98,  ly:126, lines:["Belconnen"],
+   d:"M40 74 L156 62 L172 104 L156 176 L74 186 L28 140 Z"},
+  {name:"North Canberra", lx:226, ly:139, lines:["North","Canberra"],
+   d:"M182 104 L266 100 L280 152 L262 182 L188 178 L172 140 Z"},
+  {name:"Molonglo",       lx:94,  ly:226, lines:["Molonglo"],
+   d:"M42 196 L150 190 L162 232 L138 262 L58 256 L30 226 Z"},
+  {name:"South Canberra", lx:236, ly:245, lines:["South","Canberra"],
+   d:"M194 206 L272 200 L286 252 L264 292 L212 288 L190 248 Z"},
+  {name:"Weston Creek",   lx:79,  ly:296, lines:["Weston","Creek"],
+   d:"M44 270 L118 264 L128 304 L104 328 L50 322 L32 296 Z"},
+  {name:"Woden Valley",   lx:168, ly:297, lines:["Woden","Valley"],
+   d:"M146 268 L196 262 L206 306 L186 330 L144 326 L132 298 Z"},
+  {name:"Tuggeranong",    lx:166, ly:366, lines:["Tuggeranong"],
+   d:"M96 340 L226 334 L246 372 L214 396 L120 392 L86 366 Z"}
+];
+const OFFMAP = [
+  {name:"Territory-wide", label:"Territory-wide", x:14,  y:430, w:230, h:34},
+  {name:"Multiple",       label:"Multiple",       x:268, y:430, w:78,  h:34}
+];
+
+function DistrictMap({districts, active, onPick}){
+  const by    = new Map(districts.map(d => [d.name, d]));
+  const total = districts.reduce((a, d) => a + d.spend, 0);
+  const tip   = (d, name) => d
+    ? districtLabel(d.name) + " — " + d.rows.length +
+      " project" + (d.rows.length === 1 ? "" : "s") + ", " +
+      money(d.spend) + " in 2026-27"
+    : name + " — no projects in this Budget";
+  const share = d => (d && total) ? (d.spend / total * 100).toFixed(1) + "%" : "—";
+
+  return (
+    <svg className="map" viewBox="0 0 360 476" role="img"
+         aria-label={"Schematic map of Canberra's districts, with a separate panel " +
+           "for spending that cannot be placed on a map. Clicking a shape selects " +
+           "that district. The same choice is available as buttons below."}>
+
+      {/* Lake Burley Griffin, for orientation only. */}
+      <path className="lake"
+            d="M168 199 C200 190 226 200 252 193 C266 189 277 188 288 186" />
+
+      {SHAPES.map(s => {
+        const d = by.get(s.name), on = active && active.name === s.name;
+        return (
+          <g key={s.name} className={"z" + (on ? " on" : "") + (d ? "" : " empty")}
+             onClick={d ? () => onPick(s.name) : undefined}>
+            <title>{tip(d, s.name)}</title>
+            <path className="zone" d={s.d} />
+            {s.lines.map((t, i) => (
+              <text key={i} className="zlab" x={s.lx} textAnchor="middle"
+                    y={s.lines.length === 1 ? s.ly + 4 : s.ly + i * 13 - 2}>{t}</text>
+            ))}
+          </g>
+        );
+      })}
+
+      {/* Everything below the dashed line is money with nowhere to sit. */}
+      <line className="mapline" x1="14" y1="410" x2="346" y2="410" />
+      <text className="maphead" x="14" y="424">Not placeable on a map</text>
+      {OFFMAP.map(o => {
+        const d = by.get(o.name), on = active && active.name === o.name;
+        return (
+          <g key={o.name} className={"z off" + (on ? " on" : "") + (d ? "" : " empty")}
+             onClick={d ? () => onPick(o.name) : undefined}>
+            <title>{tip(d, o.label)}</title>
+            <rect className="zone" x={o.x} y={o.y} width={o.w} height={o.h} rx="6" />
+            <text className="zlab" x={o.x + o.w / 2} y={o.y + 15}
+                  textAnchor="middle">{o.label}</text>
+            <text className="zsub" x={o.x + o.w / 2} y={o.y + 27} textAnchor="middle">
+              {d ? money(d.spend) + " · " + share(d) : "—"}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 function App(){
   const [sel, setSel]       = useState(() => store.get("acr.district", ""));
@@ -149,6 +264,10 @@ function App(){
   const maxBar  = Math.max(...districts.map(d => Math.max(d.spend, d.value)));
   const noDate  = active.rows.filter(r => !r.date_published).length;
   const rows    = [...active.rows].sort((a,b) => b.spend_2026_27 - a.spend_2026_27);
+  // TAIL is truthy for exactly the two groups that are not places.
+  const allSpend = districts.reduce((a,d) => a + d.spend, 0);
+  const offSpend = districts.filter(d => TAIL[d.name]).reduce((a,d) => a + d.spend, 0);
+  const offShare = allSpend ? (offSpend/allSpend*100).toFixed(1) : "0";
 
   return (
     <React.Fragment>
@@ -160,6 +279,15 @@ function App(){
 
       {/* ── 1. PICK ONE ─────────────────────────────────────── */}
       <h2>1. Pick your district</h2>
+      <DistrictMap districts={districts} active={active}
+                   onPick={n => { setSel(n); setOpenRow(null); }} />
+      <p className="note" style={{margin:"0 0 14px"}}>
+        The shapes are schematic. They show where districts sit relative to each
+        other, not how big they are, and area here means nothing:{" "}
+        <strong>{money(offSpend)}</strong> — {offShare}% of the 2026-27 capital
+        program — is Territory-wide or spread across districts and cannot be put
+        on a map at all. Every district is also a button below.
+      </p>
       <div className="grid">
         {districts.map(d => (
           <button key={d.name} className="card" aria-pressed={d.name === active.name}
